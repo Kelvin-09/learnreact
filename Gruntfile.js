@@ -120,6 +120,9 @@ module.exports = function (grunt) {
         }, {
           dest: '<%= config.temp %>/scripts/react.js',
           src: 'bower_components/react/react.js'
+        }, {
+          dest: '<%= config.temp %>/scripts/JSXTransformer.js',
+          src: 'bower_components/react/JSXTransformer.js'
         }/*, {
           cwd: '',
           dest: '<%= config.temp %>/scripts/bootstrap.js',
@@ -156,6 +159,9 @@ module.exports = function (grunt) {
         }, {
           dest: '<%= config.dist %>/scripts/react.js',
           src: 'bower_components/react/react.min.js'
+        }, {
+          dest: '<%= config.dist %>/scripts/JSXTransformer.js',
+          src: 'bower_components/react/JSXTransformer.js'
         }/*, {
           cwd: '',
           dest: '<%= config.dist %>/scripts/bootstrap.js',
