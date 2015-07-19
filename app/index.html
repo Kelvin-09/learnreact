@@ -11,11 +11,25 @@
   <body>
     <div id="content"></div>
     <script type="text/jsx">
+var Comment = React.createClass({
+  render: function () {
+    return (
+      <div class="comment">
+        <h2 class="commentAuthor">
+          {this.props.author}
+        </h2>
+        {this.props.children}
+      </div>
+    );
+  }
+});
+
 var CommentList = React.createClass({
   render: function () {
     return (
       <div class="commentList">
-        Hello, World! I am a CommentList.
+        <Comment author="Pete Hunt">This is one comment.</Comment>
+        <Comment author="Jordan Walke">This is *another* comment.</Comment>
       </div>
     );
   }
