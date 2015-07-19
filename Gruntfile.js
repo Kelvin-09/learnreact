@@ -7,7 +7,8 @@ module.exports = function (grunt) {
 
   var config = {
     app: 'app',
-    dist: 'dist'
+    dist: 'dist',
+    temp: '.tmp'
   };
 
   grunt.initConfig({
@@ -15,10 +16,10 @@ module.exports = function (grunt) {
 
     // 监控文件变化并执行任务
     watch: {
-      bower: {
-        files: ['bower.json'],
-        tasks: ['wiredep']
-      },
+//      bower: {
+//        files: ['bower.json'],
+//        tasks: ['wiredep']
+//      },
       gruntfile: {
         files: ['Gruntfile.js']
       },
@@ -45,11 +46,12 @@ module.exports = function (grunt) {
         // 监视的文件？
         files: [
           '<%= config.app %>/{,*/}*.html',
-          '.tmp/styles/{,*/}*.css',
+          '<%= config.temp %>/styles/{,*/}*.css',
           '<%= config.app %>/images/{,*/}*'
         ]
       }
     },
+
     // 本地静态服务器
     connect: {
       options: {
@@ -65,7 +67,7 @@ module.exports = function (grunt) {
           middleware: function (connect, options) {
             // 监控这两个目录
             return [
-              connect.static('.tmp'),
+              connect.static(config.temp),
               connect().use('/bower_components', connect.static('./bower_components')),
               connect.static(config.app)
             ];
@@ -78,6 +80,110 @@ module.exports = function (grunt) {
           livereload: false
         }
       }
+    },
+    // bower 路径依赖自动补全
+//    wiredep: {
+//      app: {
+//        ignorePath: /^\/|\.\.\//,
+//        src: ['<%= config.app %>/{,*/}*.html']
+//      },
+//      sass: {
+//        ignorePath: /(\.\.\/){1,2}bower_components\//,
+//        src: ['<%= config.app %>/styles/{,*/}*.{sass,scss}']
+//      }
+//    },
+    // server 情况下运行 server 任务，该任务只复制字体和 js 文件到 config.temp 目录
+    // 发布情况下全部执行，先将 css 文件复制到 config.temp 文件夹中
+    // 再复制字体和 js 文件到 config.temp 文件夹
+    // 最后将所有网页文件和字体文件从 config.temp 文件夹复制到 config.dist 文件夹
+    // Ps: css 文件和 js 文件通过 cssmin 和 uglify 压缩后放入 config.dist 文件夹中，此处无需插手
+    copy: {
+      styles: {
+        files: [{
+          expand: true,
+          dot: true,
+          cwd: '<%= config.app %>/styles',
+          dest: '<%= config.temp %>/styles',
+          src: '{,*/}*.css'
+        }]
+      },
+      server: {
+        files: [{
+          expand: true,
+          dot: true,
+          cwd: 'bower_components/bootstrap-sass/assets/fonts',
+          dest: '<%= config.temp %>/fonts',
+          src: '{,*/}*'
+        }, {
+          dest: '<%= config.temp %>/scripts/jquery.js',
+          src: 'bower_components/jquery/dist/jquery.js'
+        }, {
+          dest: '<%= config.temp %>/script/react.js',
+          src: 'bower_components/react/react.js'
+        }/*, {
+          cwd: '',
+          dest: '<%= config.temp %>/scripts/bootstrap.js',
+          src: 'bower_components/bootstrap-sass/assets/javascripts/bootstrap.js'
+        }, {
+          cwd: '',
+          dest: '<%= config.temp %>/scripts/angular.js',
+          src: 'bower_components/angular/angular.js'
+        }, {
+          cwd: '',
+          dest: '<%= config.temp %>/scripts/require.js',
+          src: 'bower_components/requirejs/require.js'
+        }*/]
+      },
+      dist: {
+        files: [{
+          expand: true,
+          dot: true,
+          cwd: '<%= config.app %>',
+          dest: '<%= config.dist %>',
+          src: [
+            '{,*/}*.{ico,png,txt}',
+            '{,*/}*html'
+          ]
+        }, {
+          expand: true,
+          dot: true,
+          cwd: '<%= config.temp %>/fonts',
+          src: '{,*/}*',
+          dest: '<%= config.dist %>/fonts'
+        }, {
+          dest: '<%= config.dist %>/scripts/jquery.js',
+          src: 'bower_components/jquery/dist/jquery.min.js'
+        }, {
+          dest: '<%= config.dist %>/script/react.js',
+          src: 'bower_components/react/react.min.js'
+        }/*, {
+          cwd: '',
+          dest: '<%= config.dist %>/scripts/bootstrap.js',
+          src: 'bower_components/bootstrap-sass/assets/javascripts/bootstrap.min.js'
+        }, {
+          cwd: '',
+          dest: '<%= config.dist %>/scripts/angular.js',
+          src: 'bower_components/angular/angular.min.js'
+        }, {
+          cwd: '',
+          dest: '<%= config.dist %>/scripts/require.js',
+          src: 'bower_components/requirejs/require.js'
+        }*/]
+      }
+    },
+    // 清理工程目录
+    clean: {
+      dist: {
+        files: [{
+          dot: true,
+          src: [
+            '<%= config.temp %>',
+            '<%= config.dist %>/*',
+            '!<%= config.dist %>/.git*'
+          ]
+        }]
+      },
+      server: '<%= config.temp %>'
     },
     jshint: {
       options: {
@@ -95,7 +201,7 @@ module.exports = function (grunt) {
           expand: true,
           cwd: '<%= config.app %>/styles',
           src: ['{,*/}*.{sass,scss}'],
-          dest: '.tmp/styles',
+          dest: '<%= config.temp %>/styles',
           ext: '.css'
         }]
       },
@@ -104,8 +210,38 @@ module.exports = function (grunt) {
           expand: true,
           cwd: '<%= config.app %>/styles',
           src: ['{,*/}*.{sass,scss}'],
-          dest: '.tmp/styles',
+          dest: '<%= config.temp %>/styles',
           ext: '.css'
+        }]
+      }
+    },
+    cssmin: {
+      dist: {
+        files: [{
+          expand: true,
+          dot: true,
+          cwd: '<%= config.temp %>/styles',
+          dest: '<%= config.dist %>/styles',
+          src: ['{,*/}*.css']
+        }]
+      }
+    },
+    uglify: {
+      dist: {
+        files: [
+//        {
+//          expand: true,
+//          dot: true,
+//          cwd: '<%= config.temp %>/scripts',
+//          dest: '<%= config.dist %>/scripts',
+//          src: ['{,*/}*.js']
+//        }, 
+        {
+          expand: true,
+          dot: true,
+          cwd: '<%= config.app %>/scripts',
+          dest: '<%= config.dist %>/scripts',
+          src: ['{,*/}*.js']
         }]
       }
     },
@@ -117,74 +253,21 @@ module.exports = function (grunt) {
       dist: {
         files: [{
           expand: true,
-          cwd: '.tmp/styles/',
+          cwd: '<%= config.temp %>/styles/',
           src: '{,*/}*.css',
-          dest: '.tmp/styles/'
+          dest: '<%= config.temp %>/styles/'
         }]
       }
-    },
-    // bower 路径依赖自动补全
-    wiredep: {
-      app: {
-        ignorePath: /^\/|\.\.\//,
-        src: ['<%= config.app %>/{,*/}*.html']
-      },
-      sass: {
-        ignorePath: /(\.\.\/){1,2}bower_components\//,
-        src: ['<%= config.app %>/styles/{,*/}*.{sass,scss}']
-      }
-    },
-    copy: {
-      dist: {
-        files: [{
-          expand: true,
-          dot: true,
-          cwd: '<%= config.app %>',
-          dest: '<%= config.dist %>',
-          src: [
-            '*.{ico,png,txt}',
-            '{,*/}*html',
-            'styles/fonts/{,*/}*.*'
-          ]
-        }, {
-          expand: true,
-          dot: true,
-          cwd: '.',
-          src: 'bower_components/bootstrap-sass/assets/fonts/bootstrap/*',
-          dest: '<%= config.dist %>'
-        }]
-      },
-      styles: {
-        expand: true,
-        dot: true,
-        cwd: '<%= config.app %>/styles',
-        dest: '.tmp/styles/',
-        src: '{,*/}*.css'
-      }
-    },
-    // 清理工程目录
-    clean: {
-      dist: {
-        files: [{
-          dot: true,
-          src: [
-            '.tmp',
-            '<%= config.dist %>/*',
-            '!<%= config.dist %>/.git*'
-          ]
-        }]
-      },
-      server: '.tmp'
     },
     // 多线程任务
     concurrent: {
       server: [
         'sass:server',
-        'copy:styles'
+        'copy:server'
       ],
       dist: [
-        'sass',
-        'copy:styles'
+        'sass:dist',
+        'copy'
       ]
     }
   });
@@ -199,12 +282,23 @@ module.exports = function (grunt) {
 
     grunt.task.run([
       'clean:server',
-      'wiredep',
+//      'wiredep',
       'concurrent:server',
       'autoprefixer',
       'connect:livereload',
       'watch'
     ]);
   });
+
+  grunt.registerTask('build', [
+    'clean:dist',
+//    'wiredep',
+    'concurrent:dist',
+    'autoprefixer',
+    'cssmin',
+    'uglify'
+  ]);
 };
 
+// sign 需要为 bower_components 文件夹加更新监听（虽然一般不能改里面的东西）
+// sign 图片压缩不知道需要不需要
