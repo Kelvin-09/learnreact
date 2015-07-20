@@ -1,0 +1,9 @@
+[
+  { 
+    "author": "Liu Neng", 
+    "text": "This is ~~one~~ comment. In json." 
+  }, { 
+    "author": "Zhao Si", 
+    "text": "This is ***another*** comment." 
+  }
+]

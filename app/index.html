@@ -7,18 +7,26 @@
     <script src="scripts/react.js"></script>
     <script src="scripts/JSXTransformer.js"></script>
     <script src="scripts/jquery.js"></script>
+    <script src="scripts/showdown.js"></script>
   </head>
   <body>
     <div id="content"></div>
     <script type="text/jsx">
+var converter = new showdown.Converter();
+var commentData = [
+  { author: 'Liu Neng', text: 'This is ~~one~~ comment.' },
+  { author: 'Zhao Si', text: 'This is ***another*** comment.' }
+];
+
 var Comment = React.createClass({
   render: function () {
+    var rawMarkup = converter.makeHtml(this.props.children.toString());
     return (
-      <div class="comment">
-        <h2 class="commentAuthor">
+      <div className="comment">
+        <h2 className="commentAuthor">
           {this.props.author}
         </h2>
-        {this.props.children}
+        <span dangerouslySetInnerHTML={{__html: rawMarkup}} />
       </div>
     );
   }
@@ -26,10 +34,16 @@ var Comment = React.createClass({
 
 var CommentList = React.createClass({
   render: function () {
+    var commentNodes = this.props.data.map(function (comment) {
+      return (
+        <Comment author={comment.author}>
+          {comment.text}
+        </Comment>
+      );
+    });
     return (
-      <div class="commentList">
-        <Comment author="Pete Hunt">This is one comment.</Comment>
-        <Comment author="Jordan Walke">This is *another* comment.</Comment>
+      <div className="commentList">
+        {commentNodes}
       </div>
     );
   }
@@ -38,7 +52,7 @@ var CommentList = React.createClass({
 var CommentForm = React.createClass({
   render: function () {
     return (
-      <div class="commentForm">
+      <div className="commentForm">
         Hello, World! I am a CommentForm.
       </div>
     );
@@ -46,18 +60,34 @@ var CommentForm = React.createClass({
 });
 
 var CommentBox = React.createClass({
+  getInitialState: function () {
+    return { data: [] };
+  },
+  componentDidMount: function () {
+    $.ajax({
+      url: this.props.url,
+      dataType: 'json',
+      success: function (data) {
+        this.setState({ data: data });
+      }.bind(this),
+      error: function (xhr, status, err) {
+        console.log(xhr, status, err);
+        console.error(this.props.url, status, err.toString());
+      }.bind(this)
+    });
+  },
   render: function () {
     return (
-      <div class="contentBox">
+      <div className="contentBox">
         <h1>Comments</h1>
-        <CommentList />
+        <CommentList data={this.state.data} />
         <CommentForm />
       </div>
     );
   }
 });
 React.render(
-  <CommentBox />,
+  <CommentBox url="comments.json" />,
   $('#content')[0]
 )
     </script>
